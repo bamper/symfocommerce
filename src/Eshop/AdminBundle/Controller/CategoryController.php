@@ -8,7 +8,6 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Eshop\ShopBundle\Entity\Category;
-use Eshop\ShopBundle\Form\Type\CategoryType;
 
 /**
  * Category controller.
@@ -39,73 +38,32 @@ class CategoryController extends Controller
             $limit
         );
 
-        return array(
-            'entities' => $categories,
-        );
-    }
-
-    /**
-     * Creates a new Category entity.
-     *
-     * @Route("/", name="admin_category_create")
-     * @Method("POST")
-     * @Template("ShopBundle:Category:new.html.twig")
-     */
-    public function createAction(Request $request)
-    {
-        $entity = new Category();
-        $form = $this->createCreateForm($entity);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('admin_category_show', array('id' => $entity->getId())));
-        }
-
-        return array(
-            'entity' => $entity,
-            'form' => $form->createView(),
-        );
-    }
-
-    /**
-     * Creates a form to create a Category entity.
-     *
-     * @param Category $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createCreateForm(Category $entity)
-    {
-        $form = $this->createForm(new CategoryType(), $entity, array(
-            'action' => $this->generateUrl('admin_category_create'),
-            'method' => 'POST',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Create'));
-
-        return $form;
+        return ['entities' => $categories];
     }
 
     /**
      * Displays a form to create a new Category entity.
      *
      * @Route("/new", name="admin_category_new")
-     * @Method("GET")
+     * @Method({"GET", "POST"})
      * @Template()
      */
-    public function newAction()
+    public function newAction(Request $request)
     {
-        $entity = new Category();
-        $form = $this->createCreateForm($entity);
+        $category = new Category();
+        $form = $this->createForm('Eshop\ShopBundle\Form\Type\CategoryType', $category);
+        $form->handleRequest($request);
 
-        return array(
-            'entity' => $entity,
-            'form' => $form->createView(),
-        );
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($category);
+            $em->flush();
+
+            return $this->redirectToRoute('admin_category_show', ['id' => $category->getId()]);
+        }
+
+        return ['entity' => $category,
+                'form' => $form->createView()];
     }
 
     /**
@@ -115,98 +73,37 @@ class CategoryController extends Controller
      * @Method("GET")
      * @Template()
      */
-    public function showAction($id)
+    public function showAction(Category $category)
     {
-        $em = $this->getDoctrine()->getManager();
+        $deleteForm = $this->createDeleteForm($category);
 
-        $entity = $em->getRepository('ShopBundle:Category')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Category entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity' => $entity,
-            'delete_form' => $deleteForm->createView(),
-        );
+        return ['entity' => $category,
+                'delete_form' => $deleteForm->createView()
+        ];
     }
 
     /**
      * Displays a form to edit an existing Category entity.
      *
      * @Route("/{id}/edit", name="admin_category_edit")
-     * @Method("GET")
+     * @Method({"GET", "POST"})
      * @Template()
      */
-    public function editAction($id)
+    public function editAction(Request $request, Category $category)
     {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('ShopBundle:Category')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Category entity.');
-        }
-
-        $editForm = $this->createEditForm($entity);
-        $deleteForm = $this->createDeleteForm($id);
-
-        return array(
-            'entity' => $entity,
-            'edit_form' => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
-    }
-
-    /**
-     * Creates a form to edit a Category entity.
-     *
-     * @param Category $entity The entity
-     *
-     * @return \Symfony\Component\Form\Form The form
-     */
-    private function createEditForm(Category $entity)
-    {
-        $form = $this->createForm(new CategoryType(), $entity, array(
-            'action' => $this->generateUrl('admin_category_update', array('id' => $entity->getId())),
-            'method' => 'PUT',
-        ));
-
-        $form->add('submit', 'submit', array('label' => 'Update'));
-
-        return $form;
-    }
-
-    /**
-     * Edits an existing Category entity.
-     *
-     * @Route("/{id}", name="admin_category_update")
-     * @Method("PUT")
-     * @Template("ShopBundle:Category:edit.html.twig")
-     */
-    public function updateAction(Request $request, $id)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        $entity = $em->getRepository('ShopBundle:Category')->find($id);
-
-        if (!$entity) {
-            throw $this->createNotFoundException('Unable to find Category entity.');
-        }
-
-        $deleteForm = $this->createDeleteForm($id);
-        $editForm = $this->createEditForm($entity);
+        $deleteForm = $this->createDeleteForm($category);
+        $editForm = $this->createForm('Eshop\ShopBundle\Form\Type\CategoryType', $category);
         $editForm->handleRequest($request);
 
-        if ($editForm->isValid()) {
+        if ($editForm->isSubmitted() && $editForm->isValid()) {
             if ($editForm->get('file')->getData() !== null) { // if any file was updated
                 $file = $editForm->get('file')->getData();
-                $entity->removeUpload(); // remove old file, see this at the bottom
-                $entity->setPath(($file->getClientOriginalName())); // set Image Path because preUpload and upload method will not be called if any doctrine entity will not be changed. It tooks me long time to learn it too.
+                $category->removeUpload(); // remove old file, see this at the bottom
+                $category->setPath(($file->getClientOriginalName())); // set Image Path because preUpload and upload method will not be called if any doctrine entity will not be changed. It tooks me long time to learn it too.
             }
 
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($category);
             $em->flush();
 
             $this->get('session')->getFlashBag()->add(
@@ -214,14 +111,13 @@ class CategoryController extends Controller
                 'Your changes were saved!'
             );
 
-            return $this->redirect($this->generateUrl('admin_category_edit', array('id' => $id)));
+            return $this->redirectToRoute('admin_category_edit', ['id' => $category->getId()]);
         }
 
-        return array(
-            'entity' => $entity,
-            'edit_form' => $editForm->createView(),
-            'delete_form' => $deleteForm->createView(),
-        );
+        return ['entity' => $category,
+                'edit_form' => $editForm->createView(),
+                'delete_form' => $deleteForm->createView()
+        ];
     }
 
     /**
@@ -230,20 +126,14 @@ class CategoryController extends Controller
      * @Route("/{id}", name="admin_category_delete")
      * @Method("DELETE")
      */
-    public function deleteAction(Request $request, $id)
+    public function deleteAction(Request $request, Category $category)
     {
-        $form = $this->createDeleteForm($id);
+        $form = $this->createDeleteForm($category);
         $form->handleRequest($request);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
             $em = $this->getDoctrine()->getManager();
-            $entity = $em->getRepository('ShopBundle:Category')->find($id);
-
-            if (!$entity) {
-                throw $this->createNotFoundException('Unable to find Category entity.');
-            }
-
-            $em->remove($entity);
+            $em->remove($category);
             $em->flush();
         }
 
@@ -253,16 +143,15 @@ class CategoryController extends Controller
     /**
      * Creates a form to delete a Category entity by id.
      *
-     * @param mixed $id The entity id
+     * @param Category $category The Category entity
      *
      * @return \Symfony\Component\Form\Form The form
      */
-    private function createDeleteForm($id)
+    private function createDeleteForm(Category $category)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('admin_category_delete', array('id' => $id)))
+            ->setAction($this->generateUrl('admin_category_delete', ['id' => $category->getId()]))
             ->setMethod('DELETE')
-            ->add('submit', 'submit', array('label' => 'Delete'))
             ->getForm();
     }
 }

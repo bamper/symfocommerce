@@ -10,7 +10,7 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link href="{{ asset('bundles/shop/fancybox/jquery.fancybox.css') }}" media="all" rel="stylesheet"
+    <link href="{{ asset('assets/fancybox/jquery.fancybox.css') }}" media="all" rel="stylesheet"
           type="text/css"/>
 {% endblock stylesheets %}
 
@@ -42,11 +42,7 @@
                          src="{{ asset( ('uploads/gallery/no_image_available.png') | imagine_filter('product_main_thumb')) }}"
                          alt="{{ product.name }}"/>
                 {% endif %}
-                {% if product.favourites|length %}
-                    <a href="#"><span class="glyphicon glyphicon-heart like" aria-hidden="true"></span></a>
-                {% else %}
-                    <a href="#"><span class="glyphicon glyphicon-heart-empty like" aria-hidden="true"></span></a>
-                {% endif %}
+                <a href="#"><span class="glyphicon glyphicon-heart-empty like" aria-hidden="true"></span></a>
             </div>
         </div>
         <div class="col-md-7">
@@ -95,7 +91,7 @@
 
         <div class="caption">
             <div class="group inner list-group-item-text">
-                {% include '@Shop/Partials/rawDescription.html.twig' with {'descr': product.description} %}
+                {{ product.description|rawdescr|nl2br }}
             </div>
         </div>
     </div>
@@ -103,11 +99,17 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('bundles/shop/fancybox/jquery.mousewheel-3.0.6.pack.js') }}" type="text/javascript"></script>
-    <script src="{{ asset('bundles/shop/fancybox/jquery.fancybox.pack.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('assets/fancybox/jquery.mousewheel-3.0.6.pack.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('assets/fancybox/jquery.fancybox.pack.js') }}" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
             $('.fancybox').fancybox();
+
+            {% if is_granted('ROLE_USER') %}
+                checkProductIsLiked({{ product.id }});
+            {% endif %}
+
+            addToLastSeenProductIds({{ product.id }});
         });
     </script>
 {% endblock javascripts %}

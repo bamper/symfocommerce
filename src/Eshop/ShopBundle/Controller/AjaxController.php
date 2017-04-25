@@ -24,6 +24,7 @@ class AjaxController extends Controller
         $favouritesRepository = $em->getRepository('ShopBundle:Favourites');
 
         $productId = $request->request->getInt('product_id');
+
         $product = $productRepository->find($productId);
         $user = $this->getUser();
 
@@ -33,10 +34,10 @@ class AjaxController extends Controller
             return $this->returnErrorJson('mustberegistered');
         }
 
-        $favoriteRecord = $favouritesRepository->findOneBy(array(
+        $favoriteRecord = $favouritesRepository->findOneBy([
             'user' => $this->getUser(),
             'product' => $product
-        ));
+        ]);
 
         $liked = false;
         if (!is_object($favoriteRecord)) {
@@ -52,21 +53,71 @@ class AjaxController extends Controller
 
         $em->flush();
 
-        return new JsonResponse(array(
+        return new JsonResponse([
             'favourite' => $liked,
             'success' => true
-        ), 200);
+        ], 200);
+    }
+
+    /**
+     * Сhecks if user liked this project.
+     *
+     * @Route("/ajax_is_liked_product", name="ajax_is_liked_product")
+     * @Method("POST")
+     */
+    public function checkIsLikedAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $favouritesRepository = $em->getRepository('ShopBundle:Favourites');
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->returnErrorJson('mustberegistered');
+        }
+
+        $productId = $request->request->getInt('product_id');
+
+        $liked = $favouritesRepository->checkIsLiked($user, $productId);
+
+        return new JsonResponse([
+            'liked' => $liked,
+            'success' => true
+        ], 200);
+    }
+
+    /**
+     * Render last seen products from cookies
+     *
+     * @Route("/ajax_get_last_seen_products", name="ajax_get_last_seen_products")
+     * @Method("POST")
+     */
+    public function getLastSeenProductsAction(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $productRepository = $em->getRepository('ShopBundle:Product');
+
+        $productIdsArray = $this->get('app.page_utilities')->getLastSeenProducts($request);
+
+        $products = $productRepository->getLastSeen(4, $productIdsArray, $this->getUser());
+        if (!$products) {
+            $this->returnErrorJson('product not forund');
+        }
+        $html = $this->renderView('@Shop/Partials/lastSeenProducts.html.twig', ['products' => $products]);
+
+        return new JsonResponse([
+            'html' => $html,
+            'success' => true
+        ], 200);
     }
 
     /**
      * @param string $message
      * @return JsonResponse
      */
-    public function returnErrorJson($message)
+    private function returnErrorJson($message)
     {
-        return new JsonResponse(array(
+        return new JsonResponse([
             'success' => false,
             'message' => $message
-        ), 400);
+        ], 400);
     }
 }

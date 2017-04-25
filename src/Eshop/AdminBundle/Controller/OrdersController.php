@@ -18,7 +18,6 @@ use Eshop\ShopBundle\Entity\Orders;
  */
 class OrdersController extends Controller
 {
-
     /**
      * Lists all Orders entities.
      *
@@ -29,21 +28,19 @@ class OrdersController extends Controller
     public function indexAction(Request $request)
     {
         $em = $this->getDoctrine()->getManager();
+        $ordersRepository = $em->getRepository('ShopBundle:Orders');
         $paginator = $this->get('knp_paginator');
 
-        $dql = "SELECT a FROM ShopBundle:Orders a ORDER BY a.date DESC";
-        $query = $em->createQuery($dql);
+        $qb = $ordersRepository->getAllOrdersAdminQB();
         $limit = $this->getParameter('admin_manufacturers_pagination_count');
 
         $orders = $paginator->paginate(
-            $query,
+            $qb,
             $request->query->getInt('page', 1),
             $limit
         );
 
-        return array(
-            'entities' => $orders,
-        );
+        return ['orders' => $orders];
     }
 
     /**
@@ -67,17 +64,16 @@ class OrdersController extends Controller
 
         $deleteForm = $this->createDeleteForm($id);
         $orderProducts = $order->getOrderProducts();
-        $productsArray = array();
-        $totalSum = 0;
+        $productsArray = [];
 
-        foreach($orderProducts as $orderProduct){
-            $productPosition = array();
+        foreach ($orderProducts as $orderProduct) {
+            $productPosition = [];
             /**
              * @var Product $product
              * @var OrderProduct $orderProduct
              */
             $product = $orderProduct->getProduct();
-            $price = $product->getPrice();
+            $price = $orderProduct->getPrice();
             $quantity = $orderProduct->getQuantity();
             $sum = $price * $quantity;
 
@@ -85,17 +81,14 @@ class OrdersController extends Controller
             $productPosition['quantity'] = $quantity;
             $productPosition['price'] = $price;
             $productPosition['sum'] = $sum;
-            $totalSum += $sum;
 
             $productsArray[] = $productPosition;
         }
 
-        return array(
-            'entity' => $order,
-            'delete_form' => $deleteForm->createView(),
-            'totalsum' => $totalSum,
-            'products' => $productsArray
-        );
+        return ['order' => $order,
+                'delete_form' => $deleteForm->createView(),
+                'products' => $productsArray
+        ];
     }
 
 
@@ -109,14 +102,9 @@ class OrdersController extends Controller
     private function createDeleteForm($id)
     {
         return $this->createFormBuilder()
-            ->setAction($this->generateUrl('admin_order_delete', array('id' => $id)))
+            ->setAction($this->generateUrl('admin_order_delete', ['id' => $id]))
             ->setMethod('DELETE')
-            ->add('submit', 'submit', array(
-                'label' => 'Delete',
-                'attr' => array('onclick' => 'return confirm("Are you sure?")')
-            ))
-            ->getForm()
-            ;
+            ->getForm();
     }
 
     /**

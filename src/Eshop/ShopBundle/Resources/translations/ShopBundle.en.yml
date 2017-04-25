@@ -19,6 +19,11 @@ layout:
     messages:
         mustberegistered: You must be registered for this
         productnotfound: Product not found
+    index:
+        latestproducts: Latest products
+        featuredproducts: Featured products
+    lastseen:
+        header: Your last seen products
 
 # Categories menu
 categories:
@@ -74,8 +79,13 @@ cart:
         price: Price
         sum: Sum
         totalsum: Total sum of the order
-    checkout: Checkout
+    checkout: CHECKOUT
     clear: Clear
+    pleasereg: Please Registrate!
+    regadvadtages: Please registrate to use all site advantage!
+    login: Login
+    register: Register
+    continuewithout: Continue without registration
 
 orderform:
     orderform: Order Form
@@ -116,7 +126,6 @@ errors:
         header: Page not found
         description: The requested page couldn't be located. Checkout for any URL misspelling or return to the homepage
         tohomepage: To homepage
-
     err:
         header: Ooops! Something went wrong!
         description: An error was occuped. We will fix it as soon as possible, you can go to the homepage
@@ -139,3 +148,12 @@ favourites:
         added: Added
     yourfavouriteproducts: Your Favourite Products
     noproducts: You have not favourite products yet!
+
+#registration
+registration:
+    firstname: Firstname
+    lastname: Lastname
+    phone: Phone number
+    address: Address
+    successful: Registration completed successful!
+    back: Back
